@@ -20,23 +20,6 @@ PORT=$3
 SSHPASS=${10}
 PASSWORD=${10}
 
-# Function to recursively delete files and folders
-delete_recursively() {
-  local DIR=$1
-
-  SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; ls" sftp://$HOST |
-    while read -r PERMISSIONS NB USER GROUP SIZE MONTH DAY TIME FILE; do
-      if [ "$PERMISSIONS" != "" ] && [ "$FILE" != "" ]; then
-        if [[ $PERMISSIONS == d* ]]; then
-          delete_recursively "$DIR/$FILE"
-        else
-          SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; rm \"$FILE\"; bye" sftp://$HOST
-        fi
-      fi
-    done
-  SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; rmdir .; bye" sftp://$HOST
-}
-
 # use password
 if [ -z != $SSHPASS ]; then
   echo 'use sshpass'
@@ -45,17 +28,24 @@ if [ -z != $SSHPASS ]; then
   if test $9 == "true"; then
     echo 'Start delete remote files'
 
+    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
+
     # Create a temporary file to store lftp commands
-    TEMP_LFTP_FILE=$(mktemp)
+    # TEMP_LFTP_FILE=$(mktemp)
 
     # lftp commands to delete files
     # delete_recursively "$REMOTE_PATH"
 
     # Use lftp to delete files and folders in parallel
-    SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$REMOTE_PATH\"; glob -d -- rm -r *; bye" sftp://$HOST
+    # SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$REMOTE_PATH\"; glob -d --parallel=10 -- rm -r *; bye" sftp://$HOST
+
+    # create a temporary file containing sftp commands
+    #printf "%s" "rm $REMOTE_PATH/App_Offline.htm" >$TEMP_SFTP_FILE
+    #-o StrictHostKeyChecking=no avoid Host key verification failed.
+    #SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
     # Deleting the temporary file
-    rm $TEMP_LFTP_FILE
+    # rm $TEMP_LFTP_FILE
   fi
   if test $7 = "true"; then
     echo "Connection via sftp protocol only, skip the command to create a directory"
