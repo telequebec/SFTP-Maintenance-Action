@@ -47,7 +47,7 @@ chmod 600 $TEMP_SSH_PRIVATE_KEY_FILE
 # delete remote files if needed
 if test $9 == "true";then
   echo 'Start delete remote files'
-  ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 rm -rf $6
+  ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 rm -rf $6*
 fi
 
 if test $7 = "true"; then
