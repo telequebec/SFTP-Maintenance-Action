@@ -63,24 +63,24 @@ if [ -z != ${10} ]; then
 
 REMOTE_PATH="$1"
 
-# Liste des fichiers
+# List of files
 find "$REMOTE_PATH" -type f
 
-# Liste des dossiers
+# List of folders
 find "$REMOTE_PATH" -type d' > list_files.sh
     chmod +x list_files.sh
 
-    # Téléchargement du script list_files.sh sur le serveur distant
-    printf "%s\n" "put list_files.sh $REMOTE_PATH" > $TEMP_SFTP_FILE
+    # Download the list_files.sh script on the remote server
+    printf "%s\n" "put list_files.sh $REMOTE_PATH/list_files.sh" > $TEMP_SFTP_FILE
     SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
 
-    # Exécution du script list_files.sh sur le serveur distant et récupération des résultats
-    ITEMS=$(SSHPASS=$SSHPASS sshpass -e ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST "sh list_files.sh $REMOTE_PATH")
+    # Run the list_files.sh script on the remote server and get the results
+    ITEMS=$(SSHPASS=$SSHPASS sshpass -e ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST "sh $REMOTE_PATH/list_files.sh $REMOTE_PATH")
 
     echo "Items to be deleted :"
     echo "$ITEMS"
 
-    # Suppression des fichiers et dossiers
+    # Deleting files and folders
     for item in $ITEMS; do
         if [[ "$item" != "$REMOTE_PATH" ]]; then
             printf "%s\n" "rm $item" >> $TEMP_SFTP_FILE
@@ -93,10 +93,10 @@ find "$REMOTE_PATH" -type d' > list_files.sh
         fi
     done
 
-    # Exécution des commandes sftp stockées dans le fichier temporaire
+    # Execution of sftp commands stored in the temporary file
     SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
 
-    # Suppression du fichier temporaire
+    # Deleting the temporary file
     rm $TEMP_SFTP_FILE
   fi
   if test $7 = "true"; then
