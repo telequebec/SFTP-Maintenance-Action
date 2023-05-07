@@ -26,39 +26,28 @@ if [ -z != $SSHPASS ]; then
   apk add sshpass
 
   if test $9 == "true"; then
-    echo 'Start delete remote files'
+    echo 'SFTP delete remote Maintenance file'
 
     sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
 
-    # Create a temporary file to store lftp commands
-    # TEMP_LFTP_FILE=$(mktemp)
-
-    # lftp commands to delete files
-    # delete_recursively "$REMOTE_PATH"
-
-    # Use lftp to delete files and folders in parallel
-    # SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$REMOTE_PATH\"; glob -d --parallel=10 -- rm -r *; bye" sftp://$HOST
-
-    # create a temporary file containing sftp commands
-    #printf "%s" "rm $REMOTE_PATH/App_Offline.htm" >$TEMP_SFTP_FILE
+    printf "%s" "rm $REMOTE_PATH/App_Offline.htm" >$TEMP_SFTP_FILE
     #-o StrictHostKeyChecking=no avoid Host key verification failed.
-    #SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
+    SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
-    # Deleting the temporary file
-    # rm $TEMP_LFTP_FILE
-  fi
-  if test $7 = "true"; then
-    echo "Connection via sftp protocol only, skip the command to create a directory"
+    printf "%s" "rm $REMOTE_PATH/app_offline.htm" >$TEMP_SFTP_FILE
+    #-o StrictHostKeyChecking=no avoid Host key verification failed.
+    SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
+
+    printf "%s" "rm $REMOTE_PATH/App_offline.htm" >$TEMP_SFTP_FILE
+    #-o StrictHostKeyChecking=no avoid Host key verification failed.
+    SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
   else
-    echo 'Create directory if needed'
-    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 mkdir -p $REMOTE_PATH
-  fi
+    echo 'SFTP Add Maintenance file'
 
-  echo 'SFTP Start'
-  # create a temporary file containing sftp commands
-  printf "%s" "put -r $5 $REMOTE_PATH" >$TEMP_SFTP_FILE
-  #-o StrictHostKeyChecking=no avoid Host key verification failed.
-  SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
+    # Download the App_Offline.htm script on the remote server
+    printf "%s\n" "put /App_Offline.htm $REMOTE_PATH/App_Offline.htm" > $TEMP_SFTP_FILE
+    SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
+  fi
 
   echo 'Deploy Success'
 
