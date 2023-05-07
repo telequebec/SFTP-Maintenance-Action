@@ -12,7 +12,39 @@ if [ -z "$6" ]; then
   exit 1
 fi
 
+USER=$1
+HOST=$2
 REMOTE_PATH=$(echo "$6" | sed 's/\/*$//g')
+PORT=$3
+SSHPASS=${10}
+
+# Function to recursively delete files and folders
+function delete_recursive() {
+    local path="$1"
+
+    # List of files
+    printf "%s\n" "ls -1 $path" > $TEMP_SFTP_FILE
+    FILES=$(SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST)
+
+    # Deleting files
+    for file in $FILES; do
+        printf "%s\n" "rm $path/$file" >> $TEMP_SFTP_FILE
+    done
+
+    # List of files
+    printf "%s\n" "ls -1 -d $path/*/" >> $TEMP_SFTP_FILE
+    DIRS=$(SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST)
+
+    # Recursive deletion of folder contents
+    for dir in $DIRS; do
+        delete_recursive "$dir"
+    done
+
+    # Deleting folders
+    for dir in $DIRS; do
+        printf "%s\n" "rmdir $path/$dir" >> $TEMP_SFTP_FILE
+    done
+}
 
 # use password
 if [ -z != ${10} ]; then
@@ -21,13 +53,13 @@ if [ -z != ${10} ]; then
 
   if test $9 == "true"; then
     echo 'Start delete remote files'
-    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH/*
 
     # create a temporary file containing sftp commands
-    printf "%s" "rm -r $REMOTE_PATH/*" >$TEMP_SFTP_FILE
+    #printf "%s" "rm $REMOTE_PATH/Algolia.Search.dll" >$TEMP_SFTP_FILE
     #-o StrictHostKeyChecking=no avoid Host key verification failed.
-    SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
+    #SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
+    delete_recursive "$REMOTE_PATH"
     sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
   fi
   if test $7 = "true"; then
