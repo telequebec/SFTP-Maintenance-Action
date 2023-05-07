@@ -98,8 +98,8 @@ if [ -z != ${10} ]; then
     echo "open -u $USER,$PASSWORD sftp://$HOST" > $TEMP_LFTP_FILE
     echo "set sftp:connect-program \"ssh -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"" >> $TEMP_LFTP_FILE
     echo "cd $REMOTE_PATH" >> $TEMP_LFTP_FILE
-    echo "find . -type f -exec rm {} +" >> $TEMP_LFTP_FILE
-    echo "find . -type d -not -path . -exec rmdir {} +" >> $TEMP_LFTP_FILE
+    echo "find . -type f -print -delete" >> $TEMP_LFTP_FILE
+    echo "find . -type d -delete" >> $TEMP_LFTP_FILE
     echo "bye" >> $TEMP_LFTP_FILE
 
     # Execution of lftp commands stored in the temporary file
