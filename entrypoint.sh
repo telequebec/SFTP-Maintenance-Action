@@ -51,12 +51,38 @@ if [ -z != ${10} ]; then
     #-o StrictHostKeyChecking=no avoid Host key verification failed.
     #SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
-    delete_recursive "$REMOTE_PATH"
+    #delete_recursive "$REMOTE_PATH"
 
     # Execution of sftp commands stored in the temporary file
-    SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
+    #SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
 
     #sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
+    #rm $TEMP_SFTP_FILE
+
+    # Téléchargement du script list_files.sh sur le serveur distant
+    printf "%s\n" "put list_files.sh" > $TEMP_SFTP_FILE
+    SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
+
+    # Exécution du script list_files.sh sur le serveur distant et récupération des résultats
+    ITEMS=$(SSHPASS=$SSHPASS sshpass -e ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST "sh list_files.sh $REMOTE_PATH")
+
+    # Suppression des fichiers et dossiers
+    for item in $ITEMS; do
+        if [[ "$item" != "$REMOTE_PATH" ]]; then
+            printf "%s\n" "rm -f $item" >> $TEMP_SFTP_FILE
+        fi
+    done
+
+    for item in $ITEMS; do
+        if [[ "$item" != "$REMOTE_PATH" ]]; then
+            printf "%s\n" "rmdir $item" >> $TEMP_SFTP_FILE
+        fi
+    done
+
+    # Exécution des commandes sftp stockées dans le fichier temporaire
+    SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
+
+    # Suppression du fichier temporaire
     rm $TEMP_SFTP_FILE
   fi
   if test $7 = "true"; then
