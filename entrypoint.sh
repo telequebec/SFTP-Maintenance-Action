@@ -23,32 +23,17 @@ SSHPASS=${10}
 function delete_recursive() {
     local path="$1"
 
-    # List of files
+    # List of files and folders
     printf "%s\n" "ls -1 $path" > $TEMP_SFTP_FILE
-    FILES=$(SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST)
+    ITEMS=$(SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST)
 
-    # Deleting files
-    for file in $FILES; do
-        if [[ ! $file =~ ^[-\.\/]+$ ]]; then
-            printf "%s\n" "rm $path/$file" >> $TEMP_SFTP_FILE
-        fi
-    done
-
-    # List of files
-    printf "%s\n" "ls -1 -d $path/*/" >> $TEMP_SFTP_FILE
-    DIRS=$(SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST)
-
-    # Recursive deletion of folder contents
-    for dir in $DIRS; do
-        if [[ ! $dir =~ ^[-\.\/]+$ ]]; then
-            delete_recursive "$dir"
-        fi
-    done
-
-    # Deleting folders
-    for dir in $DIRS; do
-        if [[ ! $dir =~ ^[-\.\/]+$ ]]; then
-            printf "%s\n" "rmdir $path/$dir" >> $TEMP_SFTP_FILE
+    # Deleting files and processing folders
+    for item in $ITEMS; do
+        if [[ "${item}" != */ && "${item}" != .* ]]; then
+            printf "%s\n" "rm $path/$item" >> $TEMP_SFTP_FILE
+        elif [[ "${item}" == */ ]]; then
+            delete_recursive "$path/$item"
+            printf "%s\n" "rmdir $path/$item" >> $TEMP_SFTP_FILE
         fi
     done
 }
@@ -67,6 +52,10 @@ if [ -z != ${10} ]; then
     #SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
     delete_recursive "$REMOTE_PATH"
+
+    # Execution of sftp commands stored in the temporary file
+    SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
+
     #sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
     rm $TEMP_SFTP_FILE
   fi
