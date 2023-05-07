@@ -24,21 +24,21 @@ PASSWORD=${10}
 delete_recursively() {
   local DIR=$1
 
-  lftp -u $USER,$PASSWORD -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; ls" sftp://$HOST | \
-  while read -r PERMISSIONS NB USER GROUP SIZE MONTH DAY TIME FILE; do
-    if [ "$PERMISSIONS" != "" ] && [ "$FILE" != "" ]; then
-      if [[ $PERMISSIONS == d* ]]; then
-        delete_recursively "$DIR/$FILE"
-      else
-        lftp -u $USER,$PASSWORD -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; rm \"$FILE\"; bye" sftp://$HOST
+  SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; ls" sftp://$HOST |
+    while read -r PERMISSIONS NB USER GROUP SIZE MONTH DAY TIME FILE; do
+      if [ "$PERMISSIONS" != "" ] && [ "$FILE" != "" ]; then
+        if [[ $PERMISSIONS == d* ]]; then
+          delete_recursively "$DIR/$FILE"
+        else
+          SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; rm \"$FILE\"; bye" sftp://$HOST
+        fi
       fi
-    fi
-  done
-  lftp -u $USER,$PASSWORD -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; rmdir .; bye" sftp://$HOST
+    done
+  SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; rmdir .; bye" sftp://$HOST
 }
 
 # use password
-if [ -z != ${10} ]; then
+if [ -z != $SSHPASS ]; then
   echo 'use sshpass'
   apk add sshpass
 
