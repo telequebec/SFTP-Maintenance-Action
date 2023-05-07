@@ -49,7 +49,10 @@ if [ -z != $SSHPASS ]; then
     TEMP_LFTP_FILE=$(mktemp)
 
     # lftp commands to delete files
-    delete_recursively "$REMOTE_PATH"
+    # delete_recursively "$REMOTE_PATH"
+
+    # Use lftp to delete files and folders in parallel
+    SSHPASS=$SSHPASS sshpass -e lftp -u $USER -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$REMOTE_PATH\"; glob -d -- rm -r *; bye" sftp://$HOST
 
     # Deleting the temporary file
     rm $TEMP_LFTP_FILE
