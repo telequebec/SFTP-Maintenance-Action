@@ -8,35 +8,42 @@ TEMP_SFTP_FILE='../sftp'
 
 # make sure remote path is not empty
 if [ -z "$6" ]; then
-   echo 'remote_path is empty'
-   exit 1
+  echo 'remote_path is empty'
+  exit 1
 fi
 
 # use password
 if [ -z != ${10} ]; then
-	echo 'use sshpass'
-	apk add sshpass
+  echo 'use sshpass'
+  apk add sshpass
 
-	if test $9 == "true";then
-  		echo 'Start delete remote files'
-		sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $6
-	fi
-	if test $7 = "true"; then
-  		echo "Connection via sftp protocol only, skip the command to create a directory"
-	else
- 	 	echo 'Create directory if needed'
- 	 	sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 mkdir -p $6
-	fi
+  if test $9 == "true"; then
+    echo 'Start delete remote files'
+    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $6*
 
-	echo 'SFTP Start'
-	# create a temporary file containing sftp commands
-	printf "%s" "put -r $5 $6" >$TEMP_SFTP_FILE
-	#-o StrictHostKeyChecking=no avoid Host key verification failed.
-	SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
+    # create a temporary file containing sftp commands
+    printf "%s" "rm -rf $6*" >$TEMP_SFTP_FILE
+    #-o StrictHostKeyChecking=no avoid Host key verification failed.
+    SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
-	echo 'Deploy Success'
+    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $6
+  fi
+  if test $7 = "true"; then
+    echo "Connection via sftp protocol only, skip the command to create a directory"
+  else
+    echo 'Create directory if needed'
+    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 mkdir -p $6
+  fi
 
-    exit 0
+  echo 'SFTP Start'
+  # create a temporary file containing sftp commands
+  printf "%s" "put -r $5 $6" >$TEMP_SFTP_FILE
+  #-o StrictHostKeyChecking=no avoid Host key verification failed.
+  SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
+
+  echo 'Deploy Success'
+
+  exit 0
 fi
 
 # keep string format
@@ -45,7 +52,7 @@ printf "%s" "$4" >$TEMP_SSH_PRIVATE_KEY_FILE
 chmod 600 $TEMP_SSH_PRIVATE_KEY_FILE
 
 # delete remote files if needed
-if test $9 == "true";then
+if test $9 == "true"; then
   echo 'Start delete remote files'
   ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 rm -rf $6*
 
