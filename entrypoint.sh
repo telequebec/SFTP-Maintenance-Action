@@ -12,6 +12,8 @@ if [ -z "$6" ]; then
   exit 1
 fi
 
+REMOTE_PATH=$(echo "$6" | sed 's/\/*$//g')
+
 # use password
 if [ -z != ${10} ]; then
   echo 'use sshpass'
@@ -19,25 +21,25 @@ if [ -z != ${10} ]; then
 
   if test $9 == "true"; then
     echo 'Start delete remote files'
-    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $6*
+    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH/*
 
     # create a temporary file containing sftp commands
-    printf "%s" "rm -rf $6*" >$TEMP_SFTP_FILE
+    printf "%s" "rm -rf $REMOTE_PATH*" >$TEMP_SFTP_FILE
     #-o StrictHostKeyChecking=no avoid Host key verification failed.
     SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
-    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $6
+    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
   fi
   if test $7 = "true"; then
     echo "Connection via sftp protocol only, skip the command to create a directory"
   else
     echo 'Create directory if needed'
-    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 mkdir -p $6
+    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 mkdir -p $REMOTE_PATH
   fi
 
   echo 'SFTP Start'
   # create a temporary file containing sftp commands
-  printf "%s" "put -r $5 $6" >$TEMP_SFTP_FILE
+  printf "%s" "put -r $5 $REMOTE_PATH" >$TEMP_SFTP_FILE
   #-o StrictHostKeyChecking=no avoid Host key verification failed.
   SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
@@ -54,26 +56,26 @@ chmod 600 $TEMP_SSH_PRIVATE_KEY_FILE
 # delete remote files if needed
 if test $9 == "true"; then
   echo 'Start delete remote files'
-  ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 rm -rf $6*
+  ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 rm -rf $REMOTE_PATH/*
 
   # create a temporary file containing sftp commands
-  printf "%s" "rm -rf $6*" >$TEMP_SFTP_FILE
+  printf "%s" "rm -rf $REMOTE_PATH/*" >$TEMP_SFTP_FILE
   #-o StrictHostKeyChecking=no avoid Host key verification failed.
   sftp -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2
 
-  ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 rm -rf $6
+  ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 rm -rf $REMOTE_PATH
 fi
 
 if test $7 = "true"; then
   echo "Connection via sftp protocol only, skip the command to create a directory"
 else
   echo 'Create directory if needed'
-  ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 mkdir -p $6
+  ssh -o StrictHostKeyChecking=no -p $3 -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2 mkdir -p $REMOTE_PATH
 fi
 
 echo 'SFTP Start'
 # create a temporary file containing sftp commands
-printf "%s" "put -r $5 $6" >$TEMP_SFTP_FILE
+printf "%s" "put -r $5 $REMOTE_PATH" >$TEMP_SFTP_FILE
 #-o StrictHostKeyChecking=no avoid Host key verification failed.
 sftp -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no -i $TEMP_SSH_PRIVATE_KEY_FILE $1@$2
 
