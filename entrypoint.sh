@@ -18,6 +18,7 @@ HOST=$2
 REMOTE_PATH=$(echo "$6" | sed 's/\/*$//g')
 PORT=$3
 SSHPASS=${10}
+PASSWORD=${10}
 
 # Function to recursively delete files and folders
 function delete_recursive() {
@@ -94,7 +95,7 @@ if [ -z != ${10} ]; then
     TEMP_LFTP_FILE=$(mktemp)
 
     # Commandes lftp pour supprimer les fichiers
-    echo "open -u $USER,$SSHPASS -p $PORT -o sftp:auto-confirm=yes sftp://$HOST" > $TEMP_LFTP_FILE
+    echo "open -u $USER,$PASSWORD -p $PORT sftp://$HOST -o sftp:auto-confirm=yes" > $TEMP_LFTP_FILE
     echo "cd $REMOTE_PATH" >> $TEMP_LFTP_FILE
     echo "find . -type f -exec rm {} +" >> $TEMP_LFTP_FILE
     echo "find . -type d -not -path . -exec rmdir {} +" >> $TEMP_LFTP_FILE
