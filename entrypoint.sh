@@ -95,7 +95,8 @@ if [ -z != ${10} ]; then
     TEMP_LFTP_FILE=$(mktemp)
 
     # Commandes lftp pour supprimer les fichiers
-    echo "open -u $USER,$PASSWORD -p $PORT sftp://$HOST -o sftp:auto-confirm=yes" > $TEMP_LFTP_FILE
+    echo "open -u $USER,$PASSWORD sftp://$HOST" > $TEMP_LFTP_FILE
+    echo "set sftp:connect-program \"ssh -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"" >> $TEMP_LFTP_FILE
     echo "cd $REMOTE_PATH" >> $TEMP_LFTP_FILE
     echo "find . -type f -exec rm {} +" >> $TEMP_LFTP_FILE
     echo "find . -type d -not -path . -exec rmdir {} +" >> $TEMP_LFTP_FILE
