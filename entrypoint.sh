@@ -59,36 +59,52 @@ if [ -z != ${10} ]; then
     #sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
     #rm $TEMP_SFTP_FILE
 
-    chmod +x /list_files.sh
+    #chmod +x /list_files.sh
 
     # Download the list_files.sh script on the remote server
-    printf "%s\n" "put /list_files.sh $REMOTE_PATH/list_files.sh" > $TEMP_SFTP_FILE
-    SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
+    #printf "%s\n" "put /list_files.sh $REMOTE_PATH/list_files.sh" > $TEMP_SFTP_FILE
+    #SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
 
     # Run the list_files.sh script on the remote server and get the results
-    ITEMS=$(SSHPASS=$SSHPASS sshpass -e ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST "sh $REMOTE_PATH/list_files.sh $REMOTE_PATH")
+    #ITEMS=$(SSHPASS=$SSHPASS sshpass -e ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST "sh $REMOTE_PATH/list_files.sh $REMOTE_PATH")
 
-    echo "Items to be deleted :"
-    echo "$ITEMS"
+    #echo "Items to be deleted :"
+    #echo "$ITEMS"
 
     # Deleting files and folders
-    for item in $ITEMS; do
-        if [[ "$item" != "$REMOTE_PATH" ]]; then
-            printf "%s\n" "rm $item" >> $TEMP_SFTP_FILE
-        fi
-    done
+    #for item in $ITEMS; do
+    #    if [[ "$item" != "$REMOTE_PATH" ]]; then
+    #        printf "%s\n" "rm $item" >> $TEMP_SFTP_FILE
+    #    fi
+    #done
 
-    for item in $ITEMS; do
-        if [[ "$item" != "$REMOTE_PATH" ]]; then
-            printf "%s\n" "rmdir $item" >> $TEMP_SFTP_FILE
-        fi
-    done
+    #for item in $ITEMS; do
+    #    if [[ "$item" != "$REMOTE_PATH" ]]; then
+    #        printf "%s\n" "rmdir $item" >> $TEMP_SFTP_FILE
+    #    fi
+    #done
 
     # Execution of sftp commands stored in the temporary file
-    SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
+    #SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
 
     # Deleting the temporary file
-    rm $TEMP_SFTP_FILE
+    #rm $TEMP_SFTP_FILE
+
+    # Create a temporary file to store lftp commands
+    TEMP_LFTP_FILE=$(mktemp)
+
+    # Commandes lftp pour supprimer les fichiers
+    echo "open -u $USER,$PASSWORD -p $PORT sftp://$HOST" > $TEMP_LFTP_FILE
+    echo "cd $REMOTE_PATH" >> $TEMP_LFTP_FILE
+    echo "find . -type f -exec rm {} +" >> $TEMP_LFTP_FILE
+    echo "find . -type d -not -path . -exec rmdir {} +" >> $TEMP_LFTP_FILE
+    echo "bye" >> $TEMP_LFTP_FILE
+
+    # Execution of lftp commands stored in the temporary file
+    lftp -f $TEMP_LFTP_FILE
+
+    # Deleting the temporary file
+    rm $TEMP_LFTP_FILE
   fi
   if test $7 = "true"; then
     echo "Connection via sftp protocol only, skip the command to create a directory"

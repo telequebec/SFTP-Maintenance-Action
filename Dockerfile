@@ -10,8 +10,7 @@ RUN chmod 777 entrypoint.sh
 RUN chmod 777 list_files.sh
 
 RUN apk update
-RUN apk add --no-cache openssh
-
+RUN apk add --no-cache openssh lftp
 
 # Code file to execute when the docker container starts up (`entrypoint.sh`)
 ENTRYPOINT ["/entrypoint.sh"]
