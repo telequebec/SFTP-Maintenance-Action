@@ -21,22 +21,20 @@ SSHPASS=${10}
 PASSWORD=${10}
 
 # Function to recursively delete files and folders
-function delete_recursive() {
-    local path="$1"
+delete_recursively() {
+  local DIR=$1
 
-    # List of files and folders
-    printf "%s\n" "ls -1 $path" > $TEMP_SFTP_FILE
-    ITEMS=$(SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST)
-
-    # Deleting files and processing folders
-    for item in $ITEMS; do
-        if [[ "${item}" != */ && "${item}" != .* ]]; then
-            printf "%s\n" "rm $path/$item" >> $TEMP_SFTP_FILE
-        elif [[ "${item}" == */ ]]; then
-            delete_recursive "$path/$item"
-            printf "%s\n" "rmdir $path/$item" >> $TEMP_SFTP_FILE
-        fi
-    done
+  lftp -u $USER,$PASSWORD -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; ls" sftp://$HOST | \
+  while read -r PERMISSIONS NB USER GROUP SIZE MONTH DAY TIME FILE; do
+    if [ "$PERMISSIONS" != "" ] && [ "$FILE" != "" ]; then
+      if [[ $PERMISSIONS == d* ]]; then
+        delete_recursively "$DIR/$FILE"
+      else
+        lftp -u $USER,$PASSWORD -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; rm \"$FILE\"; bye" sftp://$HOST
+      fi
+    fi
+  done
+  lftp -u $USER,$PASSWORD -p $PORT -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"; cd \"$DIR\"; rmdir .; bye" sftp://$HOST
 }
 
 # use password
@@ -47,63 +45,11 @@ if [ -z != ${10} ]; then
   if test $9 == "true"; then
     echo 'Start delete remote files'
 
-    # create a temporary file containing sftp commands
-    #printf "%s" "rm $REMOTE_PATH/Algolia.Search.dll" >$TEMP_SFTP_FILE
-    #-o StrictHostKeyChecking=no avoid Host key verification failed.
-    #SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
-
-    #delete_recursive "$REMOTE_PATH"
-
-    # Execution of sftp commands stored in the temporary file
-    #SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
-
-    #sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
-    #rm $TEMP_SFTP_FILE
-
-    #chmod +x /list_files.sh
-
-    # Download the list_files.sh script on the remote server
-    #printf "%s\n" "put /list_files.sh $REMOTE_PATH/list_files.sh" > $TEMP_SFTP_FILE
-    #SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
-
-    # Run the list_files.sh script on the remote server and get the results
-    #ITEMS=$(SSHPASS=$SSHPASS sshpass -e ssh -p $PORT -o StrictHostKeyChecking=no $USER@$HOST "sh $REMOTE_PATH/list_files.sh $REMOTE_PATH")
-
-    #echo "Items to be deleted :"
-    #echo "$ITEMS"
-
-    # Deleting files and folders
-    #for item in $ITEMS; do
-    #    if [[ "$item" != "$REMOTE_PATH" ]]; then
-    #        printf "%s\n" "rm $item" >> $TEMP_SFTP_FILE
-    #    fi
-    #done
-
-    #for item in $ITEMS; do
-    #    if [[ "$item" != "$REMOTE_PATH" ]]; then
-    #        printf "%s\n" "rmdir $item" >> $TEMP_SFTP_FILE
-    #    fi
-    #done
-
-    # Execution of sftp commands stored in the temporary file
-    #SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
-
-    # Deleting the temporary file
-    #rm $TEMP_SFTP_FILE
-
     # Create a temporary file to store lftp commands
     TEMP_LFTP_FILE=$(mktemp)
 
-    # Commandes lftp pour supprimer les fichiers
-    echo "open -u $USER,$PASSWORD sftp://$HOST" > $TEMP_LFTP_FILE
-    echo "set sftp:connect-program \"ssh -p $PORT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -a -x\"" >> $TEMP_LFTP_FILE
-    echo "cd $REMOTE_PATH" >> $TEMP_LFTP_FILE
-    echo "find . -type f -print -delete" >> $TEMP_LFTP_FILE
-    echo "find . -type d -delete" >> $TEMP_LFTP_FILE
-    echo "bye" >> $TEMP_LFTP_FILE
-
-    # Execution of lftp commands stored in the temporary file
-    lftp -f $TEMP_LFTP_FILE
+    # lftp commands to delete files
+    delete_recursively "$REMOTE_PATH"
 
     # Deleting the temporary file
     rm $TEMP_LFTP_FILE
