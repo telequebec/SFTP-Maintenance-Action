@@ -24,11 +24,6 @@ if [ -z != ${10} ]; then
     sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH/*
 
     # create a temporary file containing sftp commands
-    printf "%s" "rm $REMOTE_PATH/*.*" >$TEMP_SFTP_FILE
-    #-o StrictHostKeyChecking=no avoid Host key verification failed.
-    SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
-
-    # create a temporary file containing sftp commands
     printf "%s" "rm $REMOTE_PATH/" >$TEMP_SFTP_FILE
     #-o StrictHostKeyChecking=no avoid Host key verification failed.
     SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
