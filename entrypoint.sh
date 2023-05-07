@@ -5,6 +5,7 @@ set -eu
 
 TEMP_SSH_PRIVATE_KEY_FILE='../private_key.pem'
 TEMP_SFTP_FILE='../sftp'
+# TEMP_SFTP_FILE=$(mktemp)
 
 # make sure remote path is not empty
 if [ -z "$6" ]; then
@@ -28,7 +29,9 @@ function delete_recursive() {
 
     # Deleting files
     for file in $FILES; do
-        printf "%s\n" "rm $path/$file" >> $TEMP_SFTP_FILE
+        if [[ ! $file =~ ^[-\.\/]+$ ]]; then
+            printf "%s\n" "rm $path/$file" >> $TEMP_SFTP_FILE
+        fi
     done
 
     # List of files
@@ -37,12 +40,16 @@ function delete_recursive() {
 
     # Recursive deletion of folder contents
     for dir in $DIRS; do
-        delete_recursive "$dir"
+        if [[ ! $dir =~ ^[-\.\/]+$ ]]; then
+            delete_recursive "$dir"
+        fi
     done
 
     # Deleting folders
     for dir in $DIRS; do
-        printf "%s\n" "rmdir $path/$dir" >> $TEMP_SFTP_FILE
+        if [[ ! $dir =~ ^[-\.\/]+$ ]]; then
+            printf "%s\n" "rmdir $path/$dir" >> $TEMP_SFTP_FILE
+        fi
     done
 }
 
@@ -60,7 +67,8 @@ if [ -z != ${10} ]; then
     #SSHPASS=${10} sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $3 $8 -o StrictHostKeyChecking=no $1@$2
 
     delete_recursive "$REMOTE_PATH"
-    sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
+    #sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
+    rm $TEMP_SFTP_FILE
   fi
   if test $7 = "true"; then
     echo "Connection via sftp protocol only, skip the command to create a directory"
