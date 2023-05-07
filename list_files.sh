@@ -3,7 +3,7 @@
 REMOTE_PATH="$1"
 
 # Liste des fichiers
-find "$REMOTE_PATH" -type f
+ls -la "$REMOTE_PATH" | grep '^-' | awk '{print $NF}'
 
 # Liste des dossiers
-find "$REMOTE_PATH" -type d
+ls -la "$REMOTE_PATH" | grep '^d' | awk '{print $NF}'
