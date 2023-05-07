@@ -80,7 +80,7 @@ find "$REMOTE_PATH" -type d' > list_files.sh
     # Suppression des fichiers et dossiers
     for item in $ITEMS; do
         if [[ "$item" != "$REMOTE_PATH" ]]; then
-            printf "%s\n" "rm -f $item" >> $TEMP_SFTP_FILE
+            printf "%s\n" "rm $item" >> $TEMP_SFTP_FILE
         fi
     done
 
