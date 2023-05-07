@@ -59,6 +59,17 @@ if [ -z != ${10} ]; then
     #sshpass -p ${10} ssh -o StrictHostKeyChecking=no -p $3 $1@$2 rm -rf $REMOTE_PATH
     #rm $TEMP_SFTP_FILE
 
+    echo '#!/bin/sh
+
+REMOTE_PATH="$1"
+
+# Liste des fichiers
+find "$REMOTE_PATH" -type f
+
+# Liste des dossiers
+find "$REMOTE_PATH" -type d' > list_files.sh
+    chmod +x list_files.sh
+
     # Téléchargement du script list_files.sh sur le serveur distant
     printf "%s\n" "put list_files.sh" > $TEMP_SFTP_FILE
     SSHPASS=$SSHPASS sshpass -e sftp -oBatchMode=no -b $TEMP_SFTP_FILE -P $PORT -o StrictHostKeyChecking=no $USER@$HOST
